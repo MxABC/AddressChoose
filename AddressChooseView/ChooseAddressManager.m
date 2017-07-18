@@ -16,7 +16,7 @@
 @property (nonatomic, strong) ChooseLocationView *chooseLocationView;
 
 @property (nonatomic, strong) UIView *bgView;
-
+@property (nonatomic, strong) UITapGestureRecognizer * tap;
 
 @end
 
@@ -94,8 +94,15 @@
         self.bgView.alpha = 0.0;
         
     } completion:^(BOOL finished) {
-        
+                
         if (self.bgView) {
+            
+            if (self.tap) {
+             
+                [self.bgView removeGestureRecognizer:self.tap];
+                self.tap = nil;
+            }
+            
             [self.bgView removeFromSuperview];
             self.bgView = nil;
         }
@@ -122,6 +129,9 @@
         [_bgView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(window).insets(UIEdgeInsetsZero);
         }];
+        
+        self.tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismiss)];
+        [_bgView addGestureRecognizer:self.tap];
     }
     return _bgView;
 }
