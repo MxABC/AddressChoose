@@ -12,6 +12,7 @@
 #import <Masonry.h>
 #import "Position.h"
 #import "ChooseAddressManager.h"
+#import "ChooseHierachyManager.h"
 
 @interface ViewController ()
 //选择地址popView背景，防止重复点击选择地址
@@ -230,6 +231,33 @@
 
 }
 
+- (IBAction)choose_LoadDataStep:(id)sender {
+    
+    NSArray<AddressItem*>* provinceList = [[AddressInfoManager sharedManager]provinceList];
+    
+//    [[AddressInfoManager sharedManager]loadAllAddressItems];
+    
+    [[ChooseHierachyManager sharedManager]loadTheItems:provinceList ];
+    
+    [[ChooseHierachyManager sharedManager]showAddressPickerViewWithComplection:^(NSArray<AddressItem *> *arrayAddress) {
+        
+        //打印地址
+        NSMutableString *str = [NSMutableString string];
+        for (int i = 0; i < arrayAddress.count; i++) {
+            
+            if (![str isEqualToString:@""]) {
+                [str appendString:@">"];
+            }
+            NSLog(@"id:%lld,name:%@",arrayAddress[i].addrID,arrayAddress[i].name);
+            
+            [str appendString:arrayAddress[i].name];
+        }
+        
+        self.labelAddress.text = str;
+
+    }];
+    
+}
 
 
 @end

@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		773EE8C51F1DB0B100B26002 /* ChooseAddressManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 773EE8C41F1DB0B100B26002 /* ChooseAddressManager.m */; };
+		77457CC61F2835D700B8BDD9 /* ChooseHierachyDataView.m in Sources */ = {isa = PBXBuildFile; fileRef = 77457CC51F2835D700B8BDD9 /* ChooseHierachyDataView.m */; };
+		77457CC91F28616100B8BDD9 /* ChooseHierachyManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 77457CC81F28616100B8BDD9 /* ChooseHierachyManager.m */; };
 		775C58221F1C4717003D6AD9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 775C58211F1C4717003D6AD9 /* main.m */; };
 		775C58251F1C4717003D6AD9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 775C58241F1C4717003D6AD9 /* AppDelegate.m */; };
 		775C58281F1C4717003D6AD9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 775C58271F1C4717003D6AD9 /* ViewController.m */; };
@@ -29,6 +31,10 @@
 /* Begin PBXFileReference section */
 		773EE8C31F1DB0B100B26002 /* ChooseAddressManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChooseAddressManager.h; sourceTree = "<group>"; };
 		773EE8C41F1DB0B100B26002 /* ChooseAddressManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChooseAddressManager.m; sourceTree = "<group>"; };
+		77457CC41F2835D700B8BDD9 /* ChooseHierachyDataView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChooseHierachyDataView.h; sourceTree = "<group>"; };
+		77457CC51F2835D700B8BDD9 /* ChooseHierachyDataView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChooseHierachyDataView.m; sourceTree = "<group>"; };
+		77457CC71F28616100B8BDD9 /* ChooseHierachyManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChooseHierachyManager.h; sourceTree = "<group>"; };
+		77457CC81F28616100B8BDD9 /* ChooseHierachyManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChooseHierachyManager.m; sourceTree = "<group>"; };
 		775C581D1F1C4717003D6AD9 /* ChooseHierarchyData.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChooseHierarchyData.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		775C58211F1C4717003D6AD9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		775C58231F1C4717003D6AD9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -136,6 +142,10 @@
 				775C58421F1C472F003D6AD9 /* ChooseLocationView.m */,
 				773EE8C31F1DB0B100B26002 /* ChooseAddressManager.h */,
 				773EE8C41F1DB0B100B26002 /* ChooseAddressManager.m */,
+				77457CC41F2835D700B8BDD9 /* ChooseHierachyDataView.h */,
+				77457CC51F2835D700B8BDD9 /* ChooseHierachyDataView.m */,
+				77457CC71F28616100B8BDD9 /* ChooseHierachyManager.h */,
+				77457CC81F28616100B8BDD9 /* ChooseHierachyManager.m */,
 			);
 			path = AddressChooseView;
 			sourceTree = "<group>";
@@ -281,12 +291,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77457CC91F28616100B8BDD9 /* ChooseHierachyManager.m in Sources */,
 				775C58451F1C472F003D6AD9 /* AddressTableViewCell.m in Sources */,
 				775C58431F1C472F003D6AD9 /* AddressInfoManager.m in Sources */,
 				775C58441F1C472F003D6AD9 /* AddressItem.m in Sources */,
 				775C58281F1C4717003D6AD9 /* ViewController.m in Sources */,
 				775C58481F1C472F003D6AD9 /* ChooseLocationView.m in Sources */,
 				775C58471F1C472F003D6AD9 /* AddressView.m in Sources */,
+				77457CC61F2835D700B8BDD9 /* ChooseHierachyDataView.m in Sources */,
 				773EE8C51F1DB0B100B26002 /* ChooseAddressManager.m in Sources */,
 				775C584D1F1C49F0003D6AD9 /* Position.m in Sources */,
 				775C58251F1C4717003D6AD9 /* AppDelegate.m in Sources */,
