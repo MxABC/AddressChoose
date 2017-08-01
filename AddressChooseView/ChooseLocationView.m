@@ -221,8 +221,8 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
     return self.provinceSource.count;
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
-
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
     AddressTableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:@"AddressTableViewCell" forIndexPath:indexPath];
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     AddressItem * item;
@@ -456,7 +456,16 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 #pragma mark - private 
 
 //点击按钮,滚动到对应位置
-- (void)topBarItemClick:(UIButton *)btn{
+- (void)topBarItemClick:(UIButton *)btn
+{
+    if (_topTabbar.frame.size.width < (_topTabbar.contentwidth+70))
+    {
+        [_topTabbar setContentOffset:CGPointMake(_topTabbar.contentwidth-_topTabbar.frame.size.width + 70,0) animated:YES];
+    }
+    else
+    {
+        [_topTabbar setContentOffset:CGPointMake(0,0) animated:YES];
+    }
     
     NSInteger index = [self.topTabbarItems indexOfObject:btn];
     

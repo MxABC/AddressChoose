@@ -30,11 +30,8 @@
     dispatch_once(&onceToken, ^{
         _sharedInstance = [[ChooseHierachyManager alloc] init];
     });
-    
     return _sharedInstance;
 }
-
-
 
 - (void)loadTheItems:(NSArray<AddressItem*>*)items
 {
@@ -65,9 +62,7 @@
     };
     
     _chooseLocationView.nextStepBlock = ^(AddressItem *item) {
-
         dispatch_async(dispatch_get_global_queue(0, 0), ^{
-            
             [weakSelf loadNextStepWithItem:item];
         });
     };
@@ -80,7 +75,6 @@
         self.chooseLocationView.frame = rect;
         
     } completion:^(BOOL finished) {
-        
     }];
 }
 
@@ -99,6 +93,16 @@
     else if(item.addrType == AddressItemType_City )
     {
         subList = [[AddressInfoManager sharedManager]countryListWithCityId:item.addrID provinceId:item.parentID];
+    }
+    else if (item.addrType == AddressItemType_Country)
+    {
+        //test 假数据
+        subList = [[AddressInfoManager sharedManager]cityListWithProvinceId:130];
+    }
+    else
+    {
+        //test 假数据
+        subList = [[AddressInfoManager sharedManager]cityListWithProvinceId:130];
     }
     
     if (subList && subList.count > 0)
@@ -159,6 +163,6 @@
     return _bgView;
 }
 
-
-
 @end
+
+

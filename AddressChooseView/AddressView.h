@@ -8,6 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
-@interface AddressView : UIView
-
+//@interface AddressView : UIView
+@interface AddressView : UIScrollView
+//contentsize,width
+@property (nonatomic, assign) CGFloat contentwidth;
 @end

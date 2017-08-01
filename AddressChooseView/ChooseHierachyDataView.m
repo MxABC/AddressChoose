@@ -39,6 +39,8 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 @property (nonatomic, assign) NSInteger thirdChooseItemIdx;
 @property (nonatomic, assign) NSInteger fourChooseItemIdx;
 
+@property (nonatomic, strong) NSMutableArray<NSNumber*> *arrayChooseItemIdx;
+
 @end
 
 @implementation ChooseHierachyDataView
@@ -47,11 +49,26 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 {
     self = [super initWithFrame:frame];
     if (self) {
+        
         [self setUp];
     }
     return self;
 }
 
+- (NSMutableArray<NSNumber*>*)arrayChooseItemIdx
+{
+    if (!_arrayChooseItemIdx) {
+        
+        _arrayChooseItemIdx = [NSMutableArray array];
+        
+        for (int i = 0; i < 10; i++) {
+            
+            NSNumber *number = [NSNumber numberWithInteger:-1];
+            [_arrayChooseItemIdx addObject:number];
+        }
+    }
+    return _arrayChooseItemIdx;
+}
 
 - (void)cancelAction
 {
@@ -64,52 +81,28 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
     
     //确定按钮
     
-    NSArray<AddressItem*> * dataSouce  = [self provinceSource];
-
-    if (dataSouce) {
+    NSArray<AddressItem*> * dataSouce  = self.listItems;
+    
+    while (dataSouce && dataSouce.count > 0) {
         
+        BOOL isSelected = NO;
         for (AddressItem *item in dataSouce) {
             
             if (item.isSelected) {
                 
                 [chooseItems addObject:item];
-                if (item.addrID == 100) {
-                    _chooseFinish(chooseItems);
-
-                    return;
-                }
-                break;
-            }
-        }
-    }
-    
-    //判断是否全国权限
-    
-    
-    
-    if (self.cityDataSouce) {
-        
-        dataSouce = self.cityDataSouce;
-        for (AddressItem *item in dataSouce) {
-            
-            if (item.isSelected) {
                 
-                [chooseItems addObject:item];
+                dataSouce = item.subList;
+                isSelected = YES;
                 break;
             }
+        }
+        
+        if (!isSelected) {
+            
+            break;
         }
     }
-    
-    if (self.districtDataSouce) {
-        dataSouce = self.districtDataSouce;
-        for (AddressItem *item in dataSouce) {
-            
-            if (item.isSelected) {
-                [chooseItems addObject:item];
-                break;
-            }
-        }
-    }   
     _chooseFinish(chooseItems);
 }
 
@@ -202,39 +195,46 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
     [self.topTabbarItems addObject:topBarItem];
     [_topTabbar addSubview:topBarItem];
     [topBarItem addTarget:self action:@selector(topBarItemClick:) forControlEvents:UIControlEventTouchUpInside];
+    
+    //怎么显示
+    if (_topTabbar.frame.size.width < (_topTabbar.contentwidth+70))
+    {
+        [_topTabbar setContentOffset:CGPointMake(_topTabbar.contentwidth-_topTabbar.frame.size.width + 70,0) animated:YES];
+    }
+    else
+    {
+        [_topTabbar setContentOffset:CGPointMake(0,0) animated:YES];
+    }
 }
 
 #pragma mark - TableViewDatasouce
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
     
-    if([self.tableViews indexOfObject:tableView] == 0){
-        return self.provinceSource.count;
-    }else if ([self.tableViews indexOfObject:tableView] == 1){
-        return self.cityDataSouce.count;
-    }else if ([self.tableViews indexOfObject:tableView] == 2){
-        return self.districtDataSouce.count;
-//        return 0;
+    NSInteger colTableView = [self.tableViews indexOfObject:tableView];
+    
+    NSArray<AddressItem*>* subList = [self DataSourceWithTableViewIdx:colTableView];
+    
+    if (subList) {
+        return subList.count;
     }
-    return self.provinceSource.count;
+
+    return 0;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
 
     AddressTableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:@"AddressTableViewCell" forIndexPath:indexPath];
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    AddressItem * item;
-    //省级别
-    if([self.tableViews indexOfObject:tableView] == 0){
-        item = self.provinceSource[indexPath.row];
-    //市级别
-    }else if ([self.tableViews indexOfObject:tableView] == 1){
-        item = self.cityDataSouce[indexPath.row];
-    //县级别
-    }else if ([self.tableViews indexOfObject:tableView] == 2){
-        item = self.districtDataSouce[indexPath.row];
+    
+    NSInteger colTableView = [self.tableViews indexOfObject:tableView];
+    
+    NSArray<AddressItem*>* subList = [self DataSourceWithTableViewIdx:colTableView];
+    
+    if (subList && subList.count > indexPath.row) {
+        cell.item = subList[indexPath.row];
     }
-    cell.item = item;
+    
     return cell;
 }
 
@@ -256,126 +256,69 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 #pragma mark - TableViewDelegate
 - (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     
-    if([self.tableViews indexOfObject:tableView] == 0){
+    NSInteger colTableView = [self.tableViews indexOfObject:tableView];
+
+    NSArray<AddressItem*>* subList = [self DataSourceWithTableViewIdx:colTableView];
+    if (  !(subList && subList.count > indexPath.row) ) {
         
-        //1.1 获取下一级别的数据源(市级别,如果是直辖市时,下级则为区级别)
-        AddressItem * provinceItem = self.provinceSource[indexPath.row];
+        return indexPath;
+    }
+    
+    AddressItem *item = subList[indexPath.row];
+    
+    //1.1 判断是否是第一次选择,不是,则重新选择省,切换省.
+    NSIndexPath * indexPath0 = [tableView indexPathForSelectedRow];
+    
+    if ([indexPath0 compare:indexPath] != NSOrderedSame && indexPath0) {
         
-        //1.1 判断是否是第一次选择,不是,则重新选择省,切换省.
-        NSIndexPath * indexPath0 = [tableView indexPathForSelectedRow];
-
-        if ([indexPath0 compare:indexPath] != NSOrderedSame && indexPath0) {
-            
-            for (int i = 0; i < self.tableViews.count && self.tableViews.count != 1; i++) {
-                [self removeLastItem];
-            }
-            if (provinceItem.subList.count > 0) {
-
-                [self addTopBarItem];
-                [self addTableView];
-                [self scrollToNextItem:provinceItem.name];
-            }
-            else{
-                
-                //needmore
-                [self needNextStepWithItem:provinceItem];
-            }
-            return indexPath;
-            
-        }else if ([indexPath0 compare:indexPath] == NSOrderedSame && indexPath0){
-            
-            for (int i = 0; i < self.tableViews.count && self.tableViews.count != 1 ; i++) {
-                [self removeLastItem];
-            }
-            if (provinceItem.subList.count > 0) {
-
-                [self addTopBarItem];
-                [self addTableView];
-                [self scrollToNextItem:provinceItem.name];
-            }
-            else{
-                
-                //needmore
-                [self needNextStepWithItem:provinceItem];
-            }
-
-            return indexPath;
+        NSInteger count = self.tableViews.count;
+        for (int i = 0; i < count - 1 - colTableView; i++) {
+            [self removeLastItem];
         }
-        
-        if (provinceItem.subList.count > 0) {
+        if (item.subList.count > 0) {
             
-            //之前未选中省，第一次选择省
             [self addTopBarItem];
             [self addTableView];
-            
-            AddressItem * item = self.provinceSource[indexPath.row];
             [self scrollToNextItem:item.name];
         }
         else{
-            
             //needmore
-            [self needNextStepWithItem:provinceItem];
+            [self needNextStepWithItem:item];
         }
-
-    }else if ([self.tableViews indexOfObject:tableView] == 1){
+        return indexPath;
         
-
-        if(self.cityDataSouce.count == 0){
-            for (int i = 0; i < self.tableViews.count - 1; i++) {
-                [self removeLastItem];
-            }
-            return indexPath;
-        }
+    }else if ([indexPath0 compare:indexPath] == NSOrderedSame && indexPath0){
         
-       
-        if ([self cityDataSouce].count < indexPath.row) {
-            
-            return indexPath;
-        }
-        
-        AddressItem * cityItem = self.cityDataSouce[indexPath.row];
-        
-        NSIndexPath * indexPath0 = [tableView indexPathForSelectedRow];
-        
-        if ([indexPath0 compare:indexPath] != NSOrderedSame && indexPath0) {
-            
-            for (int i = 0; i < self.tableViews.count - 1; i++) {
-                [self removeLastItem];
-            }
-            
-            if (cityItem.subList.count > 0 ) {
-                [self addTopBarItem];
-                [self addTableView];
-                [self scrollToNextItem:cityItem.name];
-            }else{
-                
-                [self needNextStepWithItem:cityItem];
-            }
-            
-            return indexPath;
-
-        }else if ([indexPath0 compare:indexPath] == NSOrderedSame && indexPath0){
-        
-            [self scrollToNextItem:cityItem.name];
-
-            return indexPath;
-        }
-        
-        if (cityItem.subList.count > 0 ) {
-            [self addTopBarItem];
-            [self addTableView];
-            [self scrollToNextItem:cityItem.name];
-        }
-        else
-        {
-            [self needNextStepWithItem:cityItem];
-        }
-        
-    }else if ([self.tableViews indexOfObject:tableView] == 2){
-        
-        AddressItem * item = self.districtDataSouce[indexPath.row];
-        [self setUpAddress:item.name];
+//        NSInteger count = self.tableViews.count;
+//
+//        for (int i = 0; i < count-1 - colTableView; i++) {
+//            [self removeLastItem];
+//        }
+//        if (item.subList.count > 0) {
+//            [self addTopBarItem];
+//            [self addTableView];
+//            [self scrollToNextItem:item.name];
+//        }
+//        else{
+//            //needmore
+//            [self needNextStepWithItem:item];
+//        }
+        return indexPath;
     }
+    
+    if (item.subList.count > 0)
+    {
+        //之前未选中省，第一次选择省
+        [self addTopBarItem];
+        [self addTableView];
+        
+        [self scrollToNextItem:item.name];
+    }
+    else{
+        //needmore
+        [self needNextStepWithItem:item];
+    }
+    
     return indexPath;
 }
 
@@ -391,6 +334,11 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
         if (item.subList && item.subList.count > 0) {
             [item.subList enumerateObjectsUsingBlock:^(AddressItem * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
                 obj.isSelected = NO;
+                
+                if (obj.subList && obj.subList.count > 0 ) {
+                    
+                    [self setUnSelected:obj.subList];
+                }
             }];
         }
     }];
@@ -413,18 +361,17 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
                 AddressTableViewCell * cell = [_tableView cellForRowAtIndexPath:indexPath];
                 
                 cell.selectionStyle = UITableViewCellSelectionStyleNone;
-                AddressItem * item;
-                //省级别
-                if([self.tableViews indexOfObject:_tableView] == 0){
-                    item = self.provinceSource[indexPath.row];
-                    //市级别
-                }else if ([self.tableViews indexOfObject:_tableView] == 1){
-                    item = self.cityDataSouce[indexPath.row];
-                    //县级别
-                }else if ([self.tableViews indexOfObject:_tableView] == 2){
-                    item = self.districtDataSouce[indexPath.row];
+                AddressItem * item = nil;
+                
+                NSInteger colTableView = [self.tableViews indexOfObject:_tableView];
+                
+                NSArray<AddressItem*>* subList = [self DataSourceWithTableViewIdx:colTableView];
+                
+                if (subList && subList.count > indexPath.row) {
+                    
+                    item = subList[indexPath.row];
+                    cell.item = item;
                 }
-                cell.item = item;
             }
         }
     }
@@ -432,49 +379,39 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    AddressItem * item;
-    if([self.tableViews indexOfObject:tableView] == 0){
+    AddressItem * item = nil;
+    
+    NSInteger colTableView = [self.tableViews indexOfObject:tableView];
+    
+    NSInteger itemIdx = self.arrayChooseItemIdx[colTableView].integerValue;
+    
+    if (itemIdx != indexPath.row)
+    {
+        //重置之前选中的item
+        [self setUnSelected:[self DataSourceWithTableViewIdx:colTableView]];
         
-        if (self.firstChoosedItemIdx != indexPath.row) {
-            
-            //重置之前选中的item
-            [self setUnSelected:self.provinceSource];
-            
-            self.secondChoosedItemIdx = 0;
-            self.thirdChooseItemIdx = 0;
-        }
-        self.firstChoosedItemIdx = indexPath.row;
-        item = self.provinceSource[indexPath.row];
-        
-    }else if ([self.tableViews indexOfObject:tableView] == 1){
-        
-        if (self.secondChoosedItemIdx != indexPath.row) {
-            
-            [self setUnSelected:self.cityDataSouce];
-
-            self.thirdChooseItemIdx = 0;
+        for (NSInteger i = colTableView + 1; i < self.arrayChooseItemIdx.count; i++) {
+            //之后的置-1
+            NSNumber *number = [NSNumber numberWithInteger:-1];
+            [self.arrayChooseItemIdx replaceObjectAtIndex:i withObject:number];
         }
         
-        self.secondChoosedItemIdx = indexPath.row;
-        item = self.cityDataSouce[indexPath.row];
+        NSNumber *currentIdx = [NSNumber numberWithInteger:indexPath.row];
+        [self.arrayChooseItemIdx replaceObjectAtIndex:colTableView withObject:currentIdx];
         
-    }else if ([self.tableViews indexOfObject:tableView] == 2){
-
-        if (self.thirdChooseItemIdx != indexPath.row) {
-            
-            [self setUnSelected:self.districtDataSouce];
+        NSArray<AddressItem*>* subList = [self DataSourceWithTableViewIdx:colTableView];
+        
+        if (subList && subList.count > indexPath.row ) {
+            item = subList[indexPath.row];
         }
-        
-        self.thirdChooseItemIdx = indexPath.row;
-        item = self.districtDataSouce[indexPath.row];
     }
     
-    if (item.isSelected) {
-        return;
-    }
+//    if ( item.isSelected) {
+//        return;
+//    }
     
     item.isSelected = YES;
-
+    
     //不主动设置，偶尔，会有重复的勾选存在
     [self refreshCell];
     
@@ -482,21 +419,7 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
     [tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionNone];
 }
 
-- (void)tableView:(UITableView *)tableView didDeselectRowAtIndexPath:(NSIndexPath *)indexPath{
-    
-    //当前代码没有调用
-    
-    AddressItem * item;
-    if([self.tableViews indexOfObject:tableView] == 0){
-        item = self.provinceSource[indexPath.row];
-    }else if ([self.tableViews indexOfObject:tableView] == 1){
-        item = self.cityDataSouce[indexPath.row];
-    }else if ([self.tableViews indexOfObject:tableView] == 2){
-        item = self.districtDataSouce[indexPath.row];
-    }
-    item.isSelected = NO;
-    [tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
-}
+
 
 #pragma mark - private 
 
@@ -558,6 +481,19 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
     
     [self.topTabbarItems.lastObject performSelector:@selector(removeFromSuperview) withObject:nil withObject:nil];
     [self.topTabbarItems removeLastObject];
+    
+    
+    //怎么显示
+    if (_topTabbar.frame.size.width < (_topTabbar.contentwidth+70))
+    {
+        [_topTabbar setContentOffset:CGPointMake(_topTabbar.contentwidth-_topTabbar.frame.size.width + 70,0) animated:YES];
+    }
+    else
+    {
+        [_topTabbar setContentOffset:CGPointMake(0,0) animated:YES];
+    }
+    
+
 }
 
 //滚动到下级界面,并重新设置顶部按钮条上对应按钮的title
@@ -579,41 +515,6 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 
 
 //初始化选中状态
-- (void)setSelectedProvince:(NSString *)provinceName andCity:(NSString *)cityName andDistrict:(NSString *)districtName {
-    
-    for (AddressItem * item in self.provinceSource) {
-        if ([item.name isEqualToString:provinceName]) {
-            NSIndexPath * indexPath = [NSIndexPath indexPathForRow:[self.provinceSource indexOfObject:item] inSection:0];
-            UITableView * tableView  = self.tableViews.firstObject;
-            [tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionMiddle];
-            [self tableView:tableView didSelectRowAtIndexPath:indexPath];
-            break;
-        }
-    }
-    
-    for (int i = 0; i < self.cityDataSouce.count; i++) {
-        AddressItem * item = self.cityDataSouce[i];
-        
-        if ([item.name isEqualToString:cityName]) {
-            NSIndexPath * indexPath = [NSIndexPath indexPathForRow:i inSection:0];
-            UITableView * tableView  = self.tableViews[1];
-            [tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionMiddle];
-            [self tableView:tableView didSelectRowAtIndexPath:indexPath];
-            break;
-        }
-    }
-    
-    for (int i = 0; i <self.districtDataSouce.count; i++) {
-        AddressItem * item = self.districtDataSouce[i];
-        if ([item.name isEqualToString:districtName]) {
-            NSIndexPath * indexPath = [NSIndexPath indexPathForRow:i inSection:0];
-            UITableView * tableView  = self.tableViews[2];
-            [tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionMiddle];
-            [self tableView:tableView didSelectRowAtIndexPath:indexPath];
-            break;
-        }
-    }
-}
 
 #pragma mark - getter 方法
 
@@ -641,46 +542,191 @@ static  CGFloat  const  kHYTopTabbarHeight = 30; //地址标签栏的高度
 
 
 #pragma mark-  数据源
-
-//省级别数据源
-//- (NSArray *)dataSouce
-- (NSArray *)provinceSource
+//第几个tableview，也就是第几列
+- (NSArray*)DataSourceWithTableViewIdx:(NSInteger)idx
 {
-    return self.listItems;
-}
-
-- (NSArray*)cityDataSouceWithIdx:(NSInteger)idx
-{
-    if (self.listItems.count > idx) {
-        return self.listItems[idx].subList;
-    }
-    
-    return @[];
-}
-
-- (NSArray*)cityDataSouce
-{
-    if (self.listItems.count > _firstChoosedItemIdx)
-    {
-        if (self.listItems[_firstChoosedItemIdx].subList && self.listItems[_firstChoosedItemIdx].subList.count > 0)
+    switch (idx) {
+        case 0:
         {
-            return self.listItems[_firstChoosedItemIdx].subList;
+            //第一列
+            return self.listItems;
         }
+            break;
+        default:
+        {
+            //第二列
+            NSInteger firstIdx = self.arrayChooseItemIdx[0].integerValue;
+            
+            AddressItem *currentItem = self.listItems[firstIdx];
+            for (int i = 1; i < idx; i++)
+            {
+                NSInteger currentIdx  = self.arrayChooseItemIdx[i].integerValue;
+                if (currentItem.subList && currentItem.subList.count > currentIdx) {
+                    currentItem = currentItem.subList[currentIdx];
+                }
+                else{
+                    currentItem = nil;
+                    break;
+                }
+            }
+            if ( currentItem && currentItem.subList ) {
+                return currentItem.subList;
+            }
+        }
+            break;
     }
-    //回调,
     
     return @[];
 }
 
 
-- (NSArray*)districtDataSouce
+- (NSArray*)DataSourceWithTableViewIdx1:(NSInteger)idx
 {
-    if (self.listItems.count > _firstChoosedItemIdx && self.listItems[_firstChoosedItemIdx].subList.count > _secondChoosedItemIdx) {
-        
-        return self.listItems[_firstChoosedItemIdx].subList[_secondChoosedItemIdx].subList;
+    switch (idx) {
+        case 0:
+        {
+            //第一列
+            return self.listItems;
+        }
+            break;
+        case 1:
+        {
+            //第二列
+            NSInteger firstIdx = self.arrayChooseItemIdx[0].integerValue;
+            
+            if (self.listItems.count > firstIdx)
+            {
+                if (self.listItems[firstIdx].subList && self.listItems[firstIdx].subList.count > 0)
+                {
+                    return self.listItems[firstIdx].subList;
+                }
+            }
+        }
+            break;
+        case 2:
+        {
+            //第二列
+            NSInteger firstIdx = self.arrayChooseItemIdx[0].integerValue;
+            NSInteger secondIdx = self.arrayChooseItemIdx[1].integerValue;
+            
+            if (self.listItems.count > firstIdx)
+            {
+                if (self.listItems[firstIdx].subList && self.listItems[firstIdx].subList.count > secondIdx)
+                {
+                    return self.listItems[firstIdx].subList[secondIdx].subList;
+                }
+            }
+        }
+            break;
+        case 3:
+        {
+            //第二列
+            NSInteger firstIdx = self.arrayChooseItemIdx[0].integerValue;
+            NSInteger secondIdx = self.arrayChooseItemIdx[1].integerValue;
+            NSInteger thirdIdx = self.arrayChooseItemIdx[2].integerValue;
+            
+            if (self.listItems.count > firstIdx)
+            {
+                if (self.listItems[firstIdx].subList && self.listItems[firstIdx].subList.count > secondIdx)
+                {
+                    if (self.listItems[firstIdx].subList[secondIdx].subList && self.listItems[firstIdx].subList[secondIdx].subList.count > thirdIdx  ) {
+                        
+                        return self.listItems[firstIdx].subList[secondIdx].subList[thirdIdx].subList;
+                    }
+                }
+            }
+        }
+            break;
+        case 4:
+        {
+            //第二列
+            NSInteger firstIdx = self.arrayChooseItemIdx[0].integerValue;
+            NSInteger secondIdx = self.arrayChooseItemIdx[1].integerValue;
+            NSInteger thirdIdx = self.arrayChooseItemIdx[2].integerValue;
+            NSInteger fourIdx = self.arrayChooseItemIdx[3].integerValue;
+
+            if (self.listItems.count > firstIdx)
+            {
+                if (self.listItems[firstIdx].subList && self.listItems[firstIdx].subList.count > secondIdx)
+                {
+                    if (self.listItems[firstIdx].subList[secondIdx].subList && self.listItems[firstIdx].subList[secondIdx].subList.count > thirdIdx  ) {
+
+                        if (self.listItems[firstIdx].subList[secondIdx].subList[thirdIdx].subList && self.listItems[firstIdx].subList[secondIdx].subList[thirdIdx].subList.count > fourIdx ) {
+                            
+                            return self.listItems[firstIdx].subList[secondIdx].subList[thirdIdx].subList[fourIdx].subList;
+                        }
+                    }
+                }
+            }
+            
+            AddressItem *currentItem = self.listItems[firstIdx];
+            for (int i = 1; i < idx; i++) {
+                
+                NSInteger currentIdx  = self.arrayChooseItemIdx[i].integerValue;
+                if (currentItem.subList && currentItem.subList.count > currentIdx) {
+                    
+                    currentItem = currentItem.subList[currentIdx];
+                }
+                else
+                {
+                    currentItem = nil;
+                    break;
+                }
+            }
+            
+            if ( currentItem && currentItem.subList ) {
+                return currentItem.subList;
+            }
+            
+        }
+            break;
+        default:
+            break;
     }
+    
     return @[];
 }
+
+
+////省级别数据源
+////- (NSArray *)dataSouce
+//- (NSArray *)provinceSource
+//{
+//    return self.listItems;
+//}
+//
+//- (NSArray*)cityDataSouceWithIdx:(NSInteger)idx
+//{
+//    if (self.listItems.count > idx) {
+//        return self.listItems[idx].subList;
+//    }
+//    
+//    return @[];
+//}
+//
+//- (NSArray*)cityDataSouce
+//{
+//    if (self.listItems.count > _firstChoosedItemIdx)
+//    {
+//        if (self.listItems[_firstChoosedItemIdx].subList && self.listItems[_firstChoosedItemIdx].subList.count > 0)
+//        {
+//            return self.listItems[_firstChoosedItemIdx].subList;
+//        }
+//    }
+//    //回调,
+//    
+//    return @[];
+//}
+//
+//
+//- (NSArray*)districtDataSouce
+//{
+//    if (self.listItems.count > _firstChoosedItemIdx && self.listItems[_firstChoosedItemIdx].subList.count > _secondChoosedItemIdx) {
+//        
+//        return self.listItems[_firstChoosedItemIdx].subList[_secondChoosedItemIdx].subList;
+//    }
+//    return @[];
+//}
 
 @end
 

@@ -30,8 +30,15 @@ static  CGFloat  const  HYBarItemMargin = 20;
             UIView * preView = self.btnArray[i - 1];
             view.left = HYBarItemMargin  + preView.right;
         }
+        _contentwidth = view.left + 100;
+        
+//        NSLog(@"w:%ld",view.width);
     }
+    
+    self.contentSize = CGSizeMake(_contentwidth, self.frame.size.height);
+    self.scrollEnabled = YES;
 }
+
 
 - (NSMutableArray *)btnArray{
     
